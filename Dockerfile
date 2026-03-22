@@ -1,23 +1,17 @@
 FROM ubuntu:22.04
-LABEL maintainer="wingnut0310 <wingnut0310@gmail.com>"
 
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV GOTTY_TAG_VER v1.0.1
+USER root
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get -y update && \
-    apt-get install -y curl && \
-    curl -sLk https://github.com/yudai/gotty/releases/download/${GOTTY_TAG_VER}/gotty_linux_amd64.tar.gz \
-    | tar xzC /usr/local/bin && \
-    apt-get purge --auto-remove -y curl && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists*
+RUN apt-get update && apt-get install -y \
+    curl wget sudo ttyd qemu-system-x86 qemu-kvm \
+    && rm -rf /var/lib/apt/lists/*
 
+RUN useradd -m -u 1000 user && echo "user ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+USER user
+WORKDIR /home/user
 
-COPY /run_gotty.sh /run_gotty.sh
+COPY --chown=user:user start.sh /home/user/start.sh
+RUN chmod +x /home/user/start.sh
 
-RUN chmod 744 /run_gotty.sh
-
-EXPOSE 8080
-
-CMD ["/bin/bash","/run_gotty.sh"]
+ENTRYPOINT ["/home/user/start.sh"]
